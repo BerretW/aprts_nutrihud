@@ -1,52 +1,25 @@
+<!-- ================================================ -->
+<!-- FILE: html/index.html (FINÁLNÍ VERZE) -->
+<!-- ================================================ -->
 <!doctype html>
 <html lang="cs">
 <head>
   <meta charset="utf-8" />
   <title>APRTS Nutri HUD</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="hud" class="hud">
-    <div class="hud-header">
-      <span class="title">NUTRITION</span>
-      <div class="chips">
-        <span id="chip-avg" class="chip">AVG 0</span>
-        <span id="chip-bal" class="chip">BAL 0</span>
+  <div id="hud-wrapper">
+    <div id="hud" class="hud">
+      <div class="stats-container">
+        <div class="stat"><span class="label">P</span><div class="bar-track"><div id="fill-protein" class="bar-fill fill-protein"></div></div></div>
+        <div class="stat"><span class="label">F</span><div class="bar-track"><div id="fill-fats" class="bar-fill fill-fats"></div></div></div>
+        <div class="stat"><span class="label">C</span><div class="bar-track"><div id="fill-carbs" class="bar-fill fill-carbs"></div></div></div>
+        <div class="stat"><span class="label">V</span><div class="bar-track"><div id="fill-vitamins" class="bar-fill fill-vitamins"></div></div></div>
       </div>
-    </div>
-
-    <div class="bar" data-key="protein">
-      <span class="label">Protein</span>
-      <div class="track"><div class="fill fill-protein" style="width:0%"></div></div>
-      <span class="val" id="val-protein">0</span>
-    </div>
-
-    <div class="bar" data-key="fats">
-      <span class="label">Fats</span>
-      <div class="track"><div class="fill fill-fats" style="width:0%"></div></div>
-      <span class="val" id="val-fats">0</span>
-    </div>
-
-    <div class="bar" data-key="carbs">
-      <span class="label">Carbs</span>
-      <div class="track"><div class="fill fill-carbs" style="width:0%"></div></div>
-      <span class="val" id="val-carbs">0</span>
-    </div>
-
-    <div class="bar" data-key="vitamins">
-      <span class="label">Vitamins</span>
-      <div class="track"><div class="fill fill-vitamins" style="width:0%"></div></div>
-      <span class="val" id="val-vitamins">0</span>
-    </div>
-
-    <div id="tags" class="tags"></div>
-
-    <div id="hint" class="hint">
-      F8: toggle · /nutrihud_lock: zamknout pozici
+      <div id="resize-handle" class="resize-handle"></div>
     </div>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>

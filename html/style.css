@@ -1,119 +1,135 @@
+/* ================================================ */
+/* FILE: html/style.css (NOVÁ VERZE) */
+/* ================================================ */
 :root{
-  --bg: rgba(14,14,16,0.68);
+  --bg: rgba(14,14,16,0.75);
   --border: rgba(255,255,255,0.12);
   --text: #e9e9ef;
   --muted: #a7a7b3;
+  --track-bg: rgba(255,255,255,0.06);
   --protein: #7aa2ff;
   --fats: #ffb86c;
   --carbs: #7ee787;
   --vitamins: #e879f9;
-  --chip: rgba(255,255,255,0.08);
 }
 
 *{ box-sizing: border-box; }
-html,body{ margin:0; padding:0; background:transparent; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+html,body{ margin:0; padding:0; background:transparent; font-family: Inter, system-ui, sans-serif; overflow: hidden; }
+
+/* Wrapper pro pozicování */
+#hud-wrapper {
+  position: fixed;
+  right: 25px;
+  bottom: 25px;
+}
 
 .hud{
-  position: absolute;
-  left: 30px; top: 30px;
-  min-width: 260px;
-  padding: 12px;
+  position: relative; /* Důležité pro vnitřní prvky */
+  display: flex;
+  padding: 8px 12px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
   user-select: none;
-  cursor: move;
+  min-width: 130px; /* Minimální velikost */
+  min-height: 80px;
 }
 
-.hud.locked{ cursor: default; }
-
-.hud-header{
+.stats-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  width: 100%;
+  height: 100%;
+  justify-content: space-around;
+  gap: 12px;
 }
 
-.title{
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-grow: 1; /* Růst, aby vyplnil prostor */
+}
+
+.label {
   font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
 }
 
-.chips{ display:flex; gap:6px; }
-.chip{
-  font-size: 11px;
-  color: var(--text);
-  background: var(--chip);
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-}
-
-.bar{
-  display: grid;
-  grid-template-columns: 68px 1fr 42px;
-  align-items: center;
-  gap: 8px;
-  margin: 6px 0;
-}
-
-.label{
-  font-size: 12px; color: var(--muted);
-}
-
-.track{
+.bar-track {
   position: relative;
-  height: 10px;
-  background: rgba(255,255,255,0.06);
+  width: 10px;
+  height: 100%;
+  background: var(--track-bg);
   border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
 }
 
-.fill{
-  height: 100%;
-  width: 0%;
-  transition: width .2s ease;
+.bar-fill {
+  width: 100%;
+  height: 0%;
+  transition: height .2s ease-out;
 }
-
 .fill-protein{ background: var(--protein); }
 .fill-fats{ background: var(--fats); }
 .fill-carbs{ background: var(--carbs); }
 .fill-vitamins{ background: var(--vitamins); }
 
-.val{
-  text-align: right;
-  font-size: 12px;
-  color: var(--text);
-  opacity: .85;
+
+/* --- STYLY PRO REŽIM ÚPRAV --- */
+
+.resize-handle {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  display: none; /* Skryto ve výchozím stavu */
+  border-bottom: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  opacity: 0.5;
 }
 
-.tags{
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.controls {
+  position: absolute;
+  bottom: -45px; /* Pod HUDem */
+  left: 50%;
+  transform: translateX(-50%);
+  display: none; /* Skryto ve výchozím stavu */
 }
 
-.tags .tag{
-  font-size: 11px;
+#save-btn {
+  background-color: rgba(20, 20, 22, 0.8);
   color: var(--text);
-  padding: 3px 8px;
-  border-radius: 8px;
   border: 1px solid var(--border);
-  background: var(--chip);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+#save-btn:hover {
+  background-color: var(--protein);
+  border-color: var(--protein);
+  color: #000;
 }
 
-.tag.good{ border-color: rgba(126,231,135,0.5); }
-.tag.bad { border-color: rgba(255,124,124,0.6); }
 
-.hint{
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 10px;
-  text-align: right;
-  opacity: .8;
+/* Třída .move-mode aktivuje všechny editační prvky */
+body.move-mode .hud {
+  cursor: move;
+  border-color: var(--protein);
+  box-shadow: 0 0 10px rgba(122, 162, 255, 0.4);
+}
+body.move-mode .resize-handle,
+body.move-mode .controls {
+  display: block;
 }

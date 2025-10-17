@@ -1,115 +1,92 @@
+-- ================================================
+-- FILE: client.lua (FINÁLNÍ VERZE)
+-- ================================================
 local HUD_NAMESPACE = "aprts_nutrihud"
 local SHOW_ON_START = true
-local REFRESH_MS = 500 -- fallback refresh (když nepřijde event)
+local REFRESH_MS = 500
 
 local hudVisible = SHOW_ON_START
-local dragLocked = false
+local isMoveMode = false
 
--- Uložení/načtení pozice
-local function kvpGet(key, def)
-    local v = GetResourceKvpString(key)
-    if v == nil or v == "" then return def end
-    return v
+-- Ukládá pozici i velikost
+local function saveSettings(x, y, width, height)
+    
+    SetResourceKvp(HUD_NAMESPACE..":settings:x", x)
+    SetResourceKvp(HUD_NAMESPACE..":settings:y", y)
+    SetResourceKvp(HUD_NAMESPACE..":settings:width", width)
+    SetResourceKvp(HUD_NAMESPACE..":settings:height", height)
 end
 
-local function savePos(x, y)
-    SetResourceKvp(HUD_NAMESPACE..":pos", string.format("%d,%d", math.floor(x), math.floor(y)))
+-- Načítá pozici i velikost
+local function loadSettings()
+
+    local x = tonumber(GetResourceKvpString(HUD_NAMESPACE..":settings:x")) or 0.8
+    local y = tonumber(GetResourceKvpString(HUD_NAMESPACE..":settings:y")) or 0.1
+    local width = tonumber(GetResourceKvpString(HUD_NAMESPACE..":settings:width")) or 0.15
+    local height = tonumber(GetResourceKvpString(HUD_NAMESPACE..":settings:height")) or 0.25
+    return x, y, width, height
 end
 
-local function loadPos()
-    local s = kvpGet(HUD_NAMESPACE..":pos", "30,30")
-    local x, y = s:match("^(%-?%d+),(%-?%d+)$")
-    return tonumber(x) or 30, tonumber(y) or 30
+-- Funkce pro přepnutí režimu přesunu
+local function setMoveMode(state)
+    isMoveMode = state
+    SetNuiFocus(isMoveMode, isMoveMode)
+    SendNUIMessage({ action = "toggleMoveControls", show = isMoveMode })
 end
 
--- Toggle
+-- Toggle viditelnosti
 RegisterCommand("nutrihud", function()
     hudVisible = not hudVisible
-    SetNuiFocus(false, false)
     SendNUIMessage({ action = "visible", visible = hudVisible })
-end)
+end, false)
 
--- Zámek drag
-RegisterCommand("nutrihud_lock", function()
-    dragLocked = not dragLocked
-    SendNUIMessage({ action = "lock", locked = dragLocked })
-end)
+-- Přepínání režimu pro přesun/zrušení
+RegisterCommand("nutrihud_move", function()
+    setMoveMode(not isMoveMode)
+end, false)
 
--- Save pozice z NUI
-RegisterNUICallback("savePos", function(data, cb)
-    if data and data.x and data.y then
-        savePos(data.x, data.y)
+-- Uložení pozice a velikosti z NUI (voláno z JS)
+RegisterNUICallback("saveSettings", function(data, cb)
+    print("Ukládání nastavení:", json.encode(data))
+    if data and data.x and data.y and data.width and data.height then
+        saveSettings(data.x, data.y, data.width, data.height)
     end
+    setMoveMode(false) -- Po uložení automaticky vypneme režim úprav
     cb({ ok = true })
 end)
 
 -- Init
 CreateThread(function()
-    local x, y = loadPos()
-    SendNUIMessage({ action = "init", x = x, y = y, visible = hudVisible, locked = dragLocked })
+    local x, y, width, height = loadSettings()
+    SendNUIMessage({
+        action = "init",
+        x = x,
+        y = y,
+        width = width,
+        height = height,
+        visible = hudVisible
+    })
 end)
 
--- Přímý příjem dat z tvého systému
--- Očekává payload z aprts_nutrition:effectsUpdated
--- RegisterNetEvent("aprts_nutrition:effectsUpdated", function(payload)
---     if not hudVisible or not payload then return end
---     local n = payload.state or {}
---     local tags = payload.tags or {}
---     local avg = payload.avg or math.floor(((n.protein or 0)+(n.fats or 0)+(n.carbs or 0)+(n.vitamins or 0))/4)
---     local balance = payload.score or 0
---     debugprint(("nutrihud: got nutrition update: p=%d f=%d c=%d v=%d avg=%d bal=%d tags=%s"):format(
---         n.protein or 0, n.fats or 0, n.carbs or 0, n.vitamins or 0, avg, balance, table.concat(tags, ",")
---     ))
---     SendNUIMessage({
---         action = "update",
---         protein = n.protein or 0,
---         fats    = n.fats or 0,
---         carbs   = n.carbs or 0,
---         vitamins= n.vitamins or 0,
---         avg     = avg,
---         balance = balance,
---         tags    = tags
---     })
--- end)
-
--- Fallback refresh – když by eventy nepřicházely (volitelně si napoj na exports z tvého nutrition resource)
+-- Fallback refresh
 CreateThread(function()
     while true do
+        Wait(REFRESH_MS)
         if hudVisible then
-            local ok, n = pcall(function()
-                if exports["aprts_consumable"] and exports["aprts_consumable"].getNutrition then
-                    return exports["aprts_consumable"]:getNutrition()
-                end
-                return nil
-            end)
-            if ok and n then
-                local avg = math.floor(((n.protein or 0)+(n.fats or 0)+(n.carbs or 0)+(n.vitamins or 0))/4)
-                local score, tags = 0, {}
-                if exports["aprts_consumable"] and exports["aprts_consumable"].getNutritionScore then
-                    local s, t = exports["aprts_consumable"]:getNutritionScore()
-                    if s then score = s end
-                    if t then tags = t end
-                end
+            local n = exports["aprts_consumable"] and exports["aprts_consumable"]:getNutrition()
+            if n then
                 SendNUIMessage({
                     action = "update",
                     protein = n.protein or 0,
                     fats    = n.fats or 0,
                     carbs   = n.carbs or 0,
-                    vitamins= n.vitamins or 0,
-                    avg     = avg,
-                    balance = score,
-                    tags    = tags or {}
+                    vitamins= n.vitamins or 0
                 })
             end
         end
-        Wait(REFRESH_MS)
     end
 end)
 
--- Bezpečná deaktivace při smrti (schovej HUD pokud chceš)
-AddEventHandler('baseevents:onPlayerDied', function()
-    SendNUIMessage({ action = "visible", visible = false })
-end)
-AddEventHandler('baseevents:onPlayerSpawned', function()
-    SendNUIMessage({ action = "visible", visible = hudVisible })
-end)
+-- Deaktivace při smrti
+AddEventHandler('baseevents:onPlayerDied', function() SendNUIMessage({ action = "visible", visible = false }) end)
+AddEventHandler('baseevents:onPlayerSpawned', function() SendNUIMessage({ action = "visible", visible = hudVisible }) end)

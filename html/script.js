@@ -1,117 +1,135 @@
+/* ================================================ */
+/* FILE: html/script.js (FINÁLNÍ VERZE) */
+/* ================================================ */
+const wrapper = document.getElementById('hud-wrapper');
 const hud = document.getElementById('hud');
-const chipAvg = document.getElementById('chip-avg');
-const chipBal = document.getElementById('chip-bal');
-const tagsWrap = document.getElementById('tags');
+const resizeHandle = document.getElementById('resize-handle');
 
 const fills = {
-  protein: document.querySelector('.fill-protein'),
-  fats: document.querySelector('.fill-fats'),
-  carbs: document.querySelector('.fill-carbs'),
-  vitamins: document.querySelector('.fill-vitamins'),
-};
-const vals = {
-  protein: document.getElementById('val-protein'),
-  fats: document.getElementById('val-fats'),
-  carbs: document.getElementById('val-carbs'),
-  vitamins: document.getElementById('val-vitamins'),
+  protein: document.getElementById('fill-protein'),
+  fats: document.getElementById('fill-fats'),
+  carbs: document.getElementById('fill-carbs'),
+  vitamins: document.getElementById('fill-vitamins'),
 };
 
-let locked = false;
 let dragging = false;
-let dragOff = { x:0, y:0 };
+let resizing = false;
+let dragOff = { x: 0, y: 0 };
+let initialSize = { w: 0, h: 0 };
 
-function setPos(x, y, persist=false){
-  hud.style.left = x + 'px';
-  hud.style.top = y + 'px';
-  if(persist){
-    fetch(`https://aprts_nutrihud/savePos`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json; charset=UTF-8'},
-      body: JSON.stringify({ x: Math.round(x), y: Math.round(y) })
-    }).catch(()=>{});
+async function post(event, data = {}) {
+  try {
+    await fetch(`https://aprts_nutrihud/${event}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) {}
+}
+
+// Funkce pro responzivní škálování obsahu
+function updateResponsiveStyles(height) {
+  const baseHeight = 80; // min-height z CSS
+  const scale = Math.max(0.5, height / baseHeight); // Omezíme minimální škálu
+  hud.style.setProperty('--hud-scale-factor', scale.toFixed(2));
+}
+
+function setDimensions(x, y, width, height) {
+  if (x !== null && y !== null) {
+    wrapper.style.left = x + 'px';
+    wrapper.style.top = y + 'px';
+    wrapper.style.right = 'auto';
+    wrapper.style.bottom = 'auto';
+  }
+  if (width !== null && height !== null) {
+    hud.style.width = width + 'px';
+    hud.style.height = height + 'px';
+    updateResponsiveStyles(height);
+  } else {
+    // Pokud velikost není uložena, použijeme aktuální a nastavíme škálu
+    const rect = hud.getBoundingClientRect();
+    updateResponsiveStyles(rect.height);
   }
 }
 
+// Zpracování NUI zpráv
 window.addEventListener('message', (e) => {
   const data = e.data || {};
-  if(data.action === 'init'){
-    setPos(data.x||30, data.y||30, false);
-    hud.classList.toggle('locked', !!data.locked);
-    locked = !!data.locked;
-    hud.style.display = data.visible ? 'block' : 'none';
+  
+  if (data.action === 'init') {
+    setDimensions(data.x, data.y, data.width, data.height);
+    console.log('Nastavení počátečních rozměrů a pozice HUDu:', data.x, data.y, data.width, data.height);
+    hud.style.display = data.visible ? 'flex' : 'none';
   }
-  if(data.action === 'visible'){
-    hud.style.display = data.visible ? 'block' : 'none';
+  if (data.action === 'visible') {
+    hud.style.display = data.visible ? 'flex' : 'none';
   }
-  if(data.action === 'lock'){
-    locked = !!data.locked;
-    hud.classList.toggle('locked', locked);
+  if (data.action === 'update') {
+    const clamp = (v) => Math.max(0, Math.min(100, Number(v || 0)));
+    fills.protein.style.height = clamp(data.protein) + '%';
+    fills.fats.style.height = clamp(data.fats) + '%';
+    fills.carbs.style.height = clamp(data.carbs) + '%';
+    fills.vitamins.style.height = clamp(data.vitamins) + '%';
   }
-  if(data.action === 'update'){
-    const clamp = (v)=> Math.max(0, Math.min(100, Number(v||0)));
-
-    const p = clamp(data.protein);
-    const f = clamp(data.fats);
-    const c = clamp(data.carbs);
-    const v = clamp(data.vitamins);
-    fills.protein.style.width = p + '%';
-    fills.fats.style.width = f + '%';
-    fills.carbs.style.width = c + '%';
-    fills.vitamins.style.width = v + '%';
-
-    vals.protein.textContent = p.toFixed(0);
-    vals.fats.textContent = f.toFixed(0);
-    vals.carbs.textContent = c.toFixed(0);
-    vals.vitamins.textContent = v.toFixed(0);
-
-    const avg = Math.max(0, Math.min(100, Number(data.avg||0)));
-    const bal = Math.max(0, Math.min(100, Number(data.balance||0)));
-    chipAvg.textContent = `AVG ${avg.toFixed(0)}`;
-    chipBal.textContent = `BAL ${bal.toFixed(0)}`;
-
-    // Tagy
-    tagsWrap.innerHTML = '';
-    const tags = Array.isArray(data.tags) ? data.tags : [];
-    tags.forEach(t => {
-      const el = document.createElement('span');
-      el.className = 'tag ' + (['balanced_plus'].includes(t) ? 'good' : (['hungry','starving','unbalanced','low_protein','low_fats','low_carbs','low_vitamins','high_fats','sugar_spike'].includes(t) ? 'bad':''));
-      el.textContent = t.replace('_',' ');
-      tagsWrap.appendChild(el);
-    });
+  if (data.action === 'toggleMoveControls') {
+    document.body.classList.toggle('move-mode', data.show);
   }
 });
 
-// Drag & drop
-function onDown(ev){
-  if(locked) return;
+// Drag & Drop
+hud.addEventListener('mousedown', (ev) => {
+  if (ev.target !== hud || !document.body.classList.contains('move-mode')) return;
   dragging = true;
+  const rect = wrapper.getBoundingClientRect();
+  dragOff.x = ev.clientX - rect.left;
+  dragOff.y = ev.clientY - rect.top;
+});
+
+// Změna velikosti
+resizeHandle.addEventListener('mousedown', (ev) => {
+  if (!document.body.classList.contains('move-mode')) return;
+  resizing = true;
   const rect = hud.getBoundingClientRect();
-  const x = (ev.touches ? ev.touches[0].clientX : ev.clientX);
-  const y = (ev.touches ? ev.touches[0].clientY : ev.clientY);
-  dragOff.x = x - rect.left;
-  dragOff.y = y - rect.top;
+  initialSize.w = rect.width;
+  initialSize.h = rect.height;
+  dragOff.x = ev.clientX;
+  dragOff.y = ev.clientY;
   ev.preventDefault();
-}
+  ev.stopPropagation();
+});
 
-function onMove(ev){
-  if(!dragging) return;
-  const x = (ev.touches ? ev.touches[0].clientX : ev.clientX);
-  const y = (ev.touches ? ev.touches[0].clientY : ev.clientY);
-  setPos(x - dragOff.x, y - dragOff.y, false);
-  ev.preventDefault();
-}
+// Pohyb myši
+window.addEventListener('mousemove', (ev) => {
+  if (dragging) {
+    wrapper.style.left = (ev.clientX - dragOff.x) + 'px';
+    wrapper.style.top = (ev.clientY - dragOff.y) + 'px';
+  }
+  if (resizing) {
+    const minW = 130, minH = 80;
+    const newWidth = Math.max(minW, initialSize.w + (ev.clientX - dragOff.x));
+    const newHeight = Math.max(minH, initialSize.h + (ev.clientY - dragOff.y));
+    hud.style.width = newWidth + 'px';
+    hud.style.height = newHeight + 'px';
+    updateResponsiveStyles(newHeight); // Aktualizujeme škálu při změně velikosti
+  }
+});
 
-function onUp(ev){
-  if(!dragging) return;
+// Puštění myši
+window.addEventListener('mouseup', () => {
   dragging = false;
-  const rect = hud.getBoundingClientRect();
-  setPos(rect.left, rect.top, true);
-  ev.preventDefault();
-}
+  resizing = false;
+});
 
-hud.addEventListener('mousedown', onDown);
-hud.addEventListener('touchstart', onDown, {passive:false});
-window.addEventListener('mousemove', onMove);
-window.addEventListener('touchmove', onMove, {passive:false});
-window.addEventListener('mouseup', onUp);
-window.addEventListener('touchend', onUp);
+// === NOVÁ LOGIKA PRO ESCAPE ===
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && document.body.classList.contains('move-mode')) {
+    const rect = wrapper.getBoundingClientRect();
+    const hudRect = hud.getBoundingClientRect();
+    post('saveSettings', {
+      x: Math.round(rect.left),
+      y: Math.round(rect.top),
+      width: Math.round(hudRect.width),
+      height: Math.round(hudRect.height),
+    });
+  }
+});
