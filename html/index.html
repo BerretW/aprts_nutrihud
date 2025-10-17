@@ -1,5 +1,5 @@
 <!-- ================================================ -->
-<!-- FILE: html/index.html (VERZE S PLOVOUCÍM TEXTEM) -->
+<!-- FILE: html/index.html (FINÁLNÍ VERZE 2.0) -->
 <!-- ================================================ -->
 <!doctype html>
 <html lang="cs">
@@ -9,20 +9,34 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Tento kontejner je pro samotný HUD -->
   <div id="hud-wrapper">
     <div id="hud" class="hud">
-      <div class="stats-container">
-        <div class="stat"><span class="label">P</span><div class="bar-track"><div id="fill-protein" class="bar-fill fill-protein"></div></div></div>
-        <div class="stat"><span class="label">F</span><div class="bar-track"><div id="fill-fats" class="bar-fill fill-fats"></div></div></div>
-        <div class="stat"><span class="label">C</span><div class="bar-track"><div id="fill-carbs" class="bar-fill fill-carbs"></div></div></div>
-        <div class="stat"><span class="label">V</span><div class="bar-track"><div id="fill-vitamins" class="bar-fill fill-vitamins"></div></div></div>
+      <div class="chart-container">
+        <svg viewBox="0 0 100 100" class="chart-svg">
+          <!-- Pozadí (tracky) - budou to <path> elementy -->
+          <g class="tracks">
+            <path class="chart-track"></path>
+            <path class="chart-track"></path>
+            <path class="chart-track"></path>
+            <path class="chart-track"></path>
+          </g>
+          <!-- Popředí (vyplnění) - také <path> elementy -->
+          <g class="fills">
+            <path id="fill-protein"  class="chart-fill fill-protein"></path>
+            <path id="fill-fats"     class="chart-fill fill-fats"></path>
+            <path id="fill-carbs"    class="chart-fill fill-carbs"></path>
+            <path id="fill-vitamins" class="chart-fill fill-vitamins"></path>
+          </g>
+        </svg>
+
+        <div id="hud-center-text" class="hud-center-text">
+          <span class="value">0</span>
+          <span class="label">AVG</span>
+        </div>
       </div>
-      <div id="resize-handle" class="resize-handle"></div>
     </div>
   </div>
 
-  <!-- << NOVÉ: Tento kontejner je pro plovoucí text a pokrývá celou obrazovku -->
   <div id="float-text-container"></div>
   
   <script src="script.js"></script>

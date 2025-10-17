@@ -1,12 +1,10 @@
 /* ================================================ */
-/* FILE: html/style.css (NOVÁ VERZE) */
+/* FILE: html/style.css (FINÁLNÍ VERZE 2.0) */
 /* ================================================ */
 :root{
-  --bg: rgba(14,14,16,0.75);
-  --border: rgba(255,255,255,0.12);
   --text: #e9e9ef;
   --muted: #a7a7b3;
-  --track-bg: rgba(255,255,255,0.06);
+  --track-bg: rgba(255,255,255,0.08);
   --protein: #7aa2ff;
   --fats: #ffb86c;
   --carbs: #7ee787;
@@ -16,190 +14,95 @@
 *{ box-sizing: border-box; }
 html,body{ margin:0; padding:0; background:transparent; font-family: Inter, system-ui, sans-serif; overflow: hidden; }
 
-/* Wrapper pro pozicování */
 #hud-wrapper {
   position: fixed;
-  right: 25px;
-  bottom: 25px;
+  top: 25px;
+  left: 25px;
+  pointer-events: none; /* Celý wrapper ignoruje klikání */
 }
 
 .hud{
-  position: relative; /* Důležité pro vnitřní prvky */
+  position: relative;
   display: flex;
-  padding: 8px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
   user-select: none;
-  min-width: 130px; /* Minimální velikost */
-  min-height: 80px;
+  /* Velikost se nastavuje dynamicky v script.js */
 }
 
-.stats-container {
-  display: flex;
+.chart-container {
+  position: relative;
   width: 100%;
   height: 100%;
-  justify-content: space-around;
-  gap: 12px;
 }
 
-.stat {
+.chart-svg {
+  width: 100%;
+  height: 100%;
+  /* Rotace už není potřeba, cesty kreslíme přesně */
+}
+
+/* Cílíme na všechny cesty (<path>) */
+.chart-track, .chart-fill {
+  fill: none;
+  /* Šířka čáry se nastavuje dynamicky v script.js */
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease-out;
+}
+
+.chart-track {
+  stroke: var(--track-bg);
+}
+
+.fill-protein  { stroke: var(--protein); }
+.fill-fats     { stroke: var(--fats); }
+.fill-carbs    { stroke: var(--carbs); }
+.fill-vitamins { stroke: var(--vitamins); }
+
+/* --- CENTRÁLNÍ TEXT --- */
+.hud-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  flex-grow: 1; /* Růst, aby vyplnil prostor */
-}
-
-.label {
-  font-size: 12px;
+  line-height: 1;
   font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  /* Velikost písma se odvíjí od velikosti HUDu */
+}
+.hud-center-text .value {
+  font-size: calc(var(--hud-size, 100px) * 0.22);
+}
+.hud-center-text .label {
+  font-size: calc(var(--hud-size, 100px) * 0.12);
   color: var(--muted);
-}
-
-.bar-track {
-  position: relative;
-  width: 10px;
-  height: 100%;
-  background: var(--track-bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-}
-
-.bar-fill {
-  width: 100%;
-  height: 0%;
-  transition: height .2s ease-out;
-}
-.fill-protein{ background: var(--protein); }
-.fill-fats{ background: var(--fats); }
-.fill-carbs{ background: var(--carbs); }
-.fill-vitamins{ background: var(--vitamins); }
-
-
-/* --- STYLY PRO REŽIM ÚPRAV --- */
-
-.resize-handle {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 16px;
-  height: 16px;
-  cursor: se-resize;
-  display: none; /* Skryto ve výchozím stavu */
-  border-bottom: 2px solid var(--muted);
-  border-right: 2px solid var(--muted);
-  opacity: 0.5;
-}
-
-.controls {
-  position: absolute;
-  bottom: -45px; /* Pod HUDem */
-  left: 50%;
-  transform: translateX(-50%);
-  display: none; /* Skryto ve výchozím stavu */
-}
-
-#save-btn {
-  background-color: rgba(20, 20, 22, 0.8);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
-}
-#save-btn:hover {
-  background-color: var(--protein);
-  border-color: var(--protein);
-  color: #000;
+  text-transform: uppercase;
 }
 
 
-/* Třída .move-mode aktivuje všechny editační prvky */
-body.move-mode .hud {
-  cursor: move;
-  border-color: var(--protein);
-  box-shadow: 0 0 10px rgba(122, 162, 255, 0.4);
-}
-body.move-mode .resize-handle,
-body.move-mode .controls {
-  display: block;
-}
-
-.stat.animate-change {
-  animation: stat-pulse 0.7s ease-out;
-}
-
-@keyframes stat-pulse {
-  0% {
-    transform: scale(1);
-    background-color: transparent;
-  }
-  40% {
-    transform: scale(1.15);
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-  100% {
-    transform: scale(1);
-    background-color: transparent;
-  }
-}
-
-/* Kontejner, který pokrývá celou obrazovku a je nad vším */
+/* --- PLOVOUCÍ TEXT (beze změny) --- */
 #float-text-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none; /* Důležité: Umožní klikat "skrz" něj */
-  z-index: 100;
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 100;
 }
-
-/* Základní styl pro každý kus plovoucího textu */
 .float-text {
-  position: absolute;
-  top: 50%; /* Startuje uprostřed */
-  left: 50%;
-  font-size: 24px;
-  font-weight: 700;
-  white-space: nowrap; /* Zabrání zalomení textu */
+  position: absolute; top: 50%; left: 50%;
+  font-size: 24px; font-weight: 700; white-space: nowrap;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-  user-select: none; /* Nelze označit text */
-  /* Animace: název, délka, průběh, zůstane v konečném stavu */
+  user-select: none;
   animation: float-up-and-fade 2s ease-out forwards;
 }
-
-/* Barevné varianty podle typu statistiky (stejné barvy jako v HUDu) */
 .float-text.protein  { color: var(--protein); }
 .float-text.fats     { color: var(--fats); }
 .float-text.carbs    { color: var(--carbs); }
 .float-text.vitamins { color: var(--vitamins); }
-
-/* Klíčové snímky animace */
 @keyframes float-up-and-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scale(0.8);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(-20px) scale(1.1);
-  }
-  85% {
-    opacity: 1;
-    transform: translateY(-130px) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-150px) scale(0.9);
-  }
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  20% { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  85% { opacity: 1; transform: translateY(-130px) scale(1); }
+  100% { opacity: 0; transform: translateY(-150px) scale(0.9); }
 }
