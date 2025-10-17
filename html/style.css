@@ -133,3 +133,73 @@ body.move-mode .resize-handle,
 body.move-mode .controls {
   display: block;
 }
+
+.stat.animate-change {
+  animation: stat-pulse 0.7s ease-out;
+}
+
+@keyframes stat-pulse {
+  0% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+  40% {
+    transform: scale(1.15);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+  }
+}
+
+/* Kontejner, který pokrývá celou obrazovku a je nad vším */
+#float-text-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none; /* Důležité: Umožní klikat "skrz" něj */
+  z-index: 100;
+}
+
+/* Základní styl pro každý kus plovoucího textu */
+.float-text {
+  position: absolute;
+  top: 50%; /* Startuje uprostřed */
+  left: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap; /* Zabrání zalomení textu */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+  user-select: none; /* Nelze označit text */
+  /* Animace: název, délka, průběh, zůstane v konečném stavu */
+  animation: float-up-and-fade 2s ease-out forwards;
+}
+
+/* Barevné varianty podle typu statistiky (stejné barvy jako v HUDu) */
+.float-text.protein  { color: var(--protein); }
+.float-text.fats     { color: var(--fats); }
+.float-text.carbs    { color: var(--carbs); }
+.float-text.vitamins { color: var(--vitamins); }
+
+/* Klíčové snímky animace */
+@keyframes float-up-and-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1.1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(-130px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(0.9);
+  }
+}

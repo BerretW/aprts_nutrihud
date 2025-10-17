@@ -1,5 +1,5 @@
 <!-- ================================================ -->
-<!-- FILE: html/index.html (FINÁLNÍ VERZE) -->
+<!-- FILE: html/index.html (VERZE S PLOVOUCÍM TEXTEM) -->
 <!-- ================================================ -->
 <!doctype html>
 <html lang="cs">
@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Tento kontejner je pro samotný HUD -->
   <div id="hud-wrapper">
     <div id="hud" class="hud">
       <div class="stats-container">
@@ -20,6 +21,10 @@
       <div id="resize-handle" class="resize-handle"></div>
     </div>
   </div>
+
+  <!-- << NOVÉ: Tento kontejner je pro plovoucí text a pokrývá celou obrazovku -->
+  <div id="float-text-container"></div>
+  
   <script src="script.js"></script>
 </body>
 </html>
